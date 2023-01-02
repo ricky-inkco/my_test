@@ -14,6 +14,12 @@ def do_predict():
     text = data.get("my_text",None)
     
     return jsonify({"fake":text})
+
+@app.route('/test/', methods=['GET', 'POST'])
+def do_test():
+    
+    return "complete"
+
     
 
 if __name__ == '__main__':
