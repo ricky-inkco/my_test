@@ -26,6 +26,7 @@ projects = {}
 
 #app = connexion.App(__name__, debug=False)
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
 
 
 class Project:
@@ -245,14 +246,14 @@ def my_test():
     
     lm = LM()
     payload = lm.check_probabilities(testing_text, topk=5)  
-    result=payload['pred_topk']
+    pred_topk=payload['pred_topk']
     topk_data=payload['real_topk']
-    
+    bpe=payload['bpe_strings']
 
     #convert the tuple into list
     list_data = []
     # Iterate over the elements in the data list
-    for element in result:
+    for element in pred_topk:
         # Create a new list for each element
         inner_list = []
         # Iterate over the tuples in the element
@@ -286,11 +287,12 @@ def my_test():
     topk=[]
     for i in range(len(topk_data)):
         topk.append(topk_data[i][1])
-    missing=len(result)-len(testing_text.split())
+    missing=len(pred_topk)-len(testing_text.split())
     for i in range(0,missing):
         words.append("")
     
     #calculate fracp
+    print(bpe)
     st=0
     data_frac=[]
     a,b,c=np.shape(list_data)
@@ -318,7 +320,7 @@ def my_test():
         if number not in fracp:
             fracp.append(number)
     final_fracp=np.median(fracp)
-    return make_response(jsonify({'fracp':final_fracp}), 200)
+    return make_response(jsonify({'result':{'bpe_strings':bpe,'pred_topk':pred_topk,'real_topk':topk,'fracp':final_fracp}}), 200)
     
 
 
