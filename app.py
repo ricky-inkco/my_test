@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
-import connexion
+#import connexion
 import os
 import yaml
-from flask import send_from_directory, redirect
-from flask_cors import CORS
+from flask import send_from_directory, redirect,request,Flask
+#from flask_cors import CORS
 
 # from backend.Project import Project # TODO !!
 from backend import AVAILABLE_MODELS
@@ -24,7 +24,8 @@ __author__ = 'Hendrik Strobelt, Sebastian Gehrmann'
 CONFIG_FILE_NAME = 'lmf.yml'
 projects = {}
 
-app = connexion.App(__name__, debug=False)
+#app = connexion.App(__name__, debug=False)
+app = Flask(__name__)
 
 
 class Project:
@@ -235,21 +236,13 @@ class LM(AbstractLanguageChecker):
 def redir():
     return redirect('client/index.html')
 
-@app.route('/calculate',methods=['GET','POST'])
+@app.route('/predict',methods=['GET','POST'])
 def my_test():
     content=request.json
     input_text=content['text']
     input_text=input_text.strip()
     testing_text = input_text
     
-    def add_space_before_punctuation(string):
-        pattern = r'\b([.,!?"\'-:])'
-        result = re.sub(pattern, r' \1', string)
-        return result
-    
-    testing_text=add_space_before_punctuation(testing_text)
-    print(testing_text)
-
     lm = LM()
     payload = lm.check_probabilities(testing_text, topk=5)  
     result=payload['pred_topk']
@@ -280,7 +273,7 @@ def my_test():
     for lst in list_data:
         max_value = max(lst, key=lambda x: x[1])
         max_values.append(max_value[1])
-    print(max_values)
+    #print(max_values)
     # Use a regular expression to split the string
     words = re.split(r'[\s.]', testing_text)
 
@@ -288,13 +281,14 @@ def my_test():
     #words.pop()
     if input_text.endswith('.'):
         words.append('.')
-    
-    print(words)
+
     #get topk prediction
     topk=[]
     for i in range(len(topk_data)):
         topk.append(topk_data[i][1])
-    print(topk)
+    missing=len(result)-len(testing_text.split())
+    for i in range(0,missing):
+        words.append("")
     
     #calculate fracp
     st=0
@@ -303,7 +297,7 @@ def my_test():
     for i in range(a):
         for j in range(b):
             d=list_data[i][j][0]
-            print(d)
+            #print(d)
             if words[st]==d:
                 frac=topk[st]/max_values[st]
                 data_frac.append(frac)
@@ -323,41 +317,12 @@ def my_test():
         # If the number is not already in the unique numbers list, add it
         if number not in fracp:
             fracp.append(number)
-    print(fracp)
     final_fracp=np.median(fracp)
-    return make_response(jsonify({'result':final_fracp}), 200)
+    return make_response(jsonify({'fracp':final_fracp}), 200)
     
 
 
-app.add_api('server.yaml')
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--model", default='gpt-2-small')
-parser.add_argument("--nodebug", default=False)
-parser.add_argument("--address",
-                    default="127.0.0.1")  # 0.0.0.0 for nonlocal use
-parser.add_argument("--port", default="5001")
-parser.add_argument("--nocache", default=False)
-parser.add_argument("--dir", type=str, default=os.path.abspath('data'))
-
-parser.add_argument("--no_cors", action='store_true')
-
 if __name__ == '__main__':
-    args = parser.parse_args()
-
-    if not args.no_cors:
-        CORS(app.app, headers='Content-Type')
-
+    #args = parser.parse_args()
     #app.run(port=int(args.port), debug=not args.nodebug, host=args.address)
-    app.run(debug=True,host="0.0.0.0")
-else:
-    args, _ = parser.parse_known_args()
-    # load_projects(args.dir)
-    try:
-        model = AVAILABLE_MODELS[args.model]
-    except KeyError:
-        print("Model {} not found. Make sure to register it.".format(
-            args.model))
-        print("Loading GPT-2 instead.")
-        model = AVAILABLE_MODELS['gpt-2']
-    projects[args.model] = Project(model, args.model)
+    app.run(debug=True,host="0.0.0.0",port=5000)
