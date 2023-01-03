@@ -246,8 +246,10 @@ def my_test():
     
     lm = LM()
     payload = lm.check_probabilities(testing_text, topk=5)  
+    #sample=lm.sample_unconditional(testing_text)
     pred_topk=payload['pred_topk']
     topk_data=payload['real_topk']
+    saved_topk=payload['real_topk']
     bpe=payload['bpe_strings']
 
     #convert the tuple into list
@@ -320,7 +322,7 @@ def my_test():
         if number not in fracp:
             fracp.append(number)
     final_fracp=np.median(fracp)
-    return make_response(jsonify({'result':{'bpe_strings':bpe,'pred_topk':pred_topk,'real_topk':topk,'fracp':final_fracp}}), 200)
+    return make_response(jsonify({'result':{'bpe_strings':bpe,'pred_topk':pred_topk,'real_topk':saved_topk,'fracp':final_fracp}}), 200)
     
 
 
