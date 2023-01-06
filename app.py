@@ -237,7 +237,7 @@ class LM(AbstractLanguageChecker):
 def redir():
     return redirect('client/index.html')
 
-@app.route('/predict',methods=['GET','POST'])
+@app.route('/gltr-fracp-output',methods=['GET','POST'])
 def my_test():
     content=request.json
     input_text=content['text']
